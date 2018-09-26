@@ -1,8 +1,4 @@
-package com.example.samples;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
+package org.noip.imiklosik.sfpoc.examples;
 
 import com.sforce.soap.enterprise.DescribeGlobalResult;
 import com.sforce.soap.enterprise.DescribeSObjectResult;
@@ -14,96 +10,27 @@ import com.sforce.soap.enterprise.PicklistEntry;
 import com.sforce.soap.enterprise.QueryResult;
 import com.sforce.soap.enterprise.sobject.Contact;
 import com.sforce.soap.enterprise.sobject.SObject;
-import com.sforce.ws.ConnectorConfig;
 import com.sforce.ws.ConnectionException;
+import com.sforce.ws.ConnectorConfig;
+import org.noip.imiklosik.sfpoc.auth.Authenticated;
 
-public class TestSoapWithClient {
-
-    private static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-
-    String authEndPoint;
-    String userName;
-    String password;
+public class SoapExample {
 
     EnterpriseConnection connection;
 
-    public TestSoapWithClient(String username, String password, String authEndpoint){
-        this.userName = username;
-        this.password = password;
-        this.authEndPoint = authEndpoint;
+    public void initialize(Authenticated<EnterpriseConnection> authenticated) {
+        this.connection = authenticated.getConnection();
     }
 
-    public void run(String objectToDescribe) {
-        // Make a login call
-        if (login(userName, password)) {
-            // Do a describe global
-            describeGlobalSample();
-
-            // Describe an object
-            describeSObjectsSample(objectToDescribe);
-
-            // Retrieve some data using a query
-            querySample();
-
-            // Log out
-            logout();
-        }
+    private void printUserInfo(ConnectorConfig config) throws ConnectionException {
+        GetUserInfoResult userInfo = connection.getUserInfo();
+        System.out.println("UserID: " + userInfo.getUserId());
+        System.out.println("User Full Name: " + userInfo.getUserFullName());
+        System.out.println("User Email: " + userInfo.getUserEmail());
+        System.out.println();
     }
 
-    private String getUserInput(String prompt) {
-        String result = "";
-        try {
-            System.out.print(prompt);
-            result = reader.readLine();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-
-        return result;
-    }
-
-    private boolean login(String username, String password) {
-        boolean success = false;
-
-        try {
-            ConnectorConfig config = new ConnectorConfig();
-            config.setUsername(username);
-            config.setPassword(password);
-
-            System.out.println("AuthEndPoint: " + authEndPoint);
-            config.setAuthEndpoint(authEndPoint);
-
-            connection = new EnterpriseConnection(config);
-            printUserInfo(config);
-
-            success = true;
-        } catch (ConnectionException ce) {
-            ce.printStackTrace();
-        }
-
-        return success;
-    }
-
-    private void printUserInfo(ConnectorConfig config) {
-        try {
-            GetUserInfoResult userInfo = connection.getUserInfo();
-
-            System.out.println("\nLogging in ...\n");
-            System.out.println("UserID: " + userInfo.getUserId());
-            System.out.println("User Full Name: " + userInfo.getUserFullName());
-            System.out.println("User Email: " + userInfo.getUserEmail());
-            System.out.println();
-            System.out.println("SessionID: " + config.getSessionId());
-            System.out.println("Auth End Point: " + config.getAuthEndpoint());
-            System.out
-                    .println("Service End Point: " + config.getServiceEndpoint());
-            System.out.println();
-        } catch (ConnectionException ce) {
-            ce.printStackTrace();
-        }
-    }
-
-    private void logout() {
+    public void cleanup() {
         try {
             connection.logout();
             System.out.println("Logged out.");
@@ -120,7 +47,7 @@ public class TestSoapWithClient {
      * the call likely does not change frequently. The DescribeGlobalResult is
      * simply echoed to the console.
      */
-    private void describeGlobalSample() {
+    public void describeGlobal() {
         try {
             // describeGlobal() returns an array of object results that
             // includes the object names that are available to the logged-in user.
@@ -144,9 +71,9 @@ public class TestSoapWithClient {
      * information includes permissions, field types and length and available
      * values for picklist fields and types for referenceTo fields.
      */
-    private void describeSObjectsSample(String objectToDescribe) {
+    public void describeSObject(String objectToDescribe) {
         try {
-            // Call describeSObjects() passing in an array with one object type
+            // Call describeSObject() passing in an array with one object type
             // name
             DescribeSObjectResult[] dsrArray = connection
                     .describeSObjects(new String[] { objectToDescribe });
@@ -255,8 +182,7 @@ public class TestSoapWithClient {
         }
     }
 
-    private void querySample() {
-        String soqlQuery = "SELECT FirstName, LastName FROM Contact";
+    public void query(String soqlQuery) {
         try {
             QueryResult qr = connection.query(soqlQuery);
             boolean done = false;
